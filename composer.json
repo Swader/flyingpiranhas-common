@@ -25,6 +25,5 @@
         "psr-0": {
             "flyingpiranhas\\common": "\\"
         }
-    },
-"target-dir": "flyingpiranhas/common"
+    }
 }
