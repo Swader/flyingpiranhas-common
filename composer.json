@@ -23,7 +23,8 @@
     },
     "autoload": {
         "psr-0": {
-            "flyingpiranhas\\common": "/"
+            "flyingpiranhas\\common": ""
         }
-    }
+    },
+    "target-dir": "/"
 }
