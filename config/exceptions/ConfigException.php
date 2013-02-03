@@ -1,18 +1,17 @@
 <?php
 
-namespace flyingpiranhas\common\cache\exceptions;
-
+namespace flyingpiranhas\common\config\exceptions;
 use flyingpiranhas\common\exceptions\FpException;
 
 /**
- * @category       cache
+ * @category       config
  * @package        flyingpiranhas.common
  * @license        BSD License
  * @version        0.01
  * @since          2012-11-23
- * @author         Bruno Škvorc <bruno@skvorc.me>
+ * @author         Ivan Pintar
  */
-class CacheException extends FpException
+class ConfigException extends FpException
 {
 
 }
