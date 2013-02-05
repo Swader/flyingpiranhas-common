@@ -2,9 +2,8 @@
 
 namespace flyingpiranhas\common\session;
 
-use \SessionHandlerInterface;
+use SessionHandlerInterface;
 use ArrayIterator;
-use SessionHandler;
 use flyingpiranhas\common\session\exceptions\SessionException;
 use flyingpiranhas\common\session\interfaces\SessionInterface;
 
@@ -42,9 +41,9 @@ class Session implements SessionInterface
      *
      * @param SessionHandlerInterface $oSessionHandler
      */
-    public function __construct(SessionHandlerInterface $oSessionHandler = null)
+    public function __construct(SessionHandlerInterface $oSessionHandler)
     {
-        $this->oSessionHandler = ($oSessionHandler) ? $oSessionHandler : new SessionHandler();
+        $this->oSessionHandler = $oSessionHandler;
     }
 
     /**
@@ -55,12 +54,12 @@ class Session implements SessionInterface
     {
         if (!self::$bSessionStarted) {
             session_set_save_handler(
-                array($this, 'open'),
-                array($this, 'close'),
-                array($this, 'read'),
-                array($this, 'write'),
-                array($this, 'destroy'),
-                array($this, 'gc')
+                array($this->oSessionHandler, 'open'),
+                array($this->oSessionHandler, 'close'),
+                array($this->oSessionHandler, 'read'),
+                array($this->oSessionHandler, 'write'),
+                array($this->oSessionHandler, 'destroy'),
+                array($this->oSessionHandler, 'gc')
             );
 
             self::$bSessionStarted = session_start();
@@ -86,7 +85,7 @@ class Session implements SessionInterface
         if (!self::$bSessionRegenerated) {
             self::$bSessionRegenerated = true;
 
-            return session_regenerate_id($bDeleteOld);
+            //return session_regenerate_id($bDeleteOld);
         }
 
         return true;

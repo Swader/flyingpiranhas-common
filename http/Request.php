@@ -21,13 +21,13 @@ use flyingpiranhas\common\http\interfaces\RequestInterface;
 class Request implements RequestInterface
 {
 
-    const REQUEST_METHOD_GET    = 'GET';
-    const REQUEST_METHOD_POST   = 'POST';
-    const REQUEST_METHOD_PUT    = 'PUT';
+    const REQUEST_METHOD_GET = 'GET';
+    const REQUEST_METHOD_POST = 'POST';
+    const REQUEST_METHOD_PUT = 'PUT';
     const REQUEST_METHOD_DELETE = 'DELETE';
 
-    const PARAM_TYPES_GET   = 'GET';
-    const PARAM_TYPES_POST  = 'POST';
+    const PARAM_TYPES_GET = 'GET';
+    const PARAM_TYPES_POST = 'POST';
     const PARAM_TYPES_FILES = 'FILES';
 
     /** @var Params */
@@ -58,7 +58,7 @@ class Request implements RequestInterface
                 $mValue = array();
                 parse_str($mCookie, $mValue);
 
-                $dExpDate = ($mValue['expires']) ? (new DateTime)->setTimestamp($mValue['expires']) : null;
+                $dExpDate = (isset($mValue['expires'])) ? (new DateTime)->setTimestamp($mValue['expires']) : null;
 
                 $aCookies[] = new Cookie($sName, $mValue['params'], $dExpDate);
             }
