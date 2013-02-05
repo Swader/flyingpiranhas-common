@@ -19,8 +19,6 @@ use Closure;
  * of some class will get a reference to the same object. That object is effectively a singleton.
  * If some class is registered as 'new', a new object will be provided when requested.
  *
- * @todo           fix recursion when class and name are the same
- *
  * @category       dependencyInjection
  * @package        flyingpiranhas.common
  * @license        BSD License
@@ -65,13 +63,14 @@ class DIContainer implements DIContainerInterface
     {
         // register class
         $sName = '\\' . trim($sName, '\\');
-        $this->aRegistered[$sName] = array(
-            'class' => '\\' . trim($sClass, '\\'),
-            'closure' => null,
-            'instance' => null,
-            'type' => $sType,
-            'overrides' => $aOverrides
-        );
+
+        $oRegistration = new DIRegistration();
+        $oRegistration
+            ->setClass('\\' . trim($sClass, '\\'))
+            ->setType($sType)
+            ->setOverrides($aOverrides);
+
+        $this->aRegistered[$sName] = $oRegistration;
 
         return $this;
     }
@@ -92,13 +91,12 @@ class DIContainer implements DIContainerInterface
         }
         $sName = '\\' . trim($sName, '\\');
 
-        $this->aRegistered[$sName] = array(
-            'class' => '\\' . trim(get_class($oInstance), '\\'),
-            'closure' => null,
-            'instance' => $oInstance,
-            'type' => self::SHARED_INSTANCE,
-            'overrides' => array()
-        );
+        $oRegistration = new DIRegistration();
+        $oRegistration
+            ->setInstance($oInstance)
+            ->setType(self::SHARED_INSTANCE);
+
+        $this->aRegistered[$sName] = $oRegistration;
 
         return $this;
     }
@@ -120,13 +118,14 @@ class DIContainer implements DIContainerInterface
     {
         // register class
         $sName = '\\' . trim($sName, '\\');
-        $this->aRegistered[$sName] = array(
-            'class' => null,
-            'closure' => $oClosure,
-            'instance' => null,
-            'type' => $sType,
-            'overrides' => $aClosureParams
-        );
+
+        $oRegistration = new DIRegistration();
+        $oRegistration
+            ->setClosure($oClosure)
+            ->setType($sType)
+            ->setOverrides($aClosureParams);
+
+        $this->aRegistered[$sName] = $oRegistration;
 
         return $this;
     }
@@ -153,47 +152,66 @@ class DIContainer implements DIContainerInterface
         }
 
         if (isset($this->aRegistered[$sName])) {
-            $aParams = array_merge($this->aRegistered[$sName]['overrides'], $aOverrides);
+            /** @var $oRegistration DIRegistration */
+            $oRegistration = $this->aRegistered[$sName];
+
+            $aParams = array_merge($oRegistration->getOverrides(), $aOverrides);
+
+            // if the name and class are the same
+            if ($sName == $oRegistration->getClass()) {
+                // resolve constructor
+                $oInstance = $this->resolveConstructor($sName, $aParams);
+
+                // resolve setters
+                $this->resolveSetters($oInstance, $aParams);
+
+                // if registered as a shared instance
+                if ($oRegistration->getType() == self::SHARED_INSTANCE) {
+                    $oRegistration->setInstance($oInstance);
+                }
+
+                // return the instance
+                return $oInstance;
+            }
+
 
             // if an instance with the given name is registered, return that
-            if ($this->aRegistered[$sName]['instance']) {
-                return $this->aRegistered[$sName]['instance'];
+            if ($oRegistration->getInstance()) {
+                return $oRegistration->getInstance();
             }
 
             // if a closure with this name exists
-            if ($this->aRegistered[$sName]['closure']) {
-                $oClosure = $this->aRegistered[$sName]['closure'];
-                if ($this->aRegistered[$sName]['type'] == self::SHARED_INSTANCE) {
-                    $this->aRegistered[$sName]['instance'] = $oClosure($aParams);
-                    $this->aRegistered[$sName]['class'] = get_class($this->aRegistered[$sName]['instance']);
-                    return $this->aRegistered[$sName]['instance'];
-                } else {
-                    return $oClosure($aParams);
+            if ($oRegistration->getClosure()) {
+                $oClosure = $oRegistration->getClosure();
+                $oInstance = $oClosure($aParams);
+
+                if ($oRegistration->getType() == self::SHARED_INSTANCE) {
+                    $oRegistration->setInstance($oInstance);
                 }
 
+                return $oInstance;
             }
 
-            if ($this->aRegistered[$sName]['type'] == self::SHARED_INSTANCE) {
-                // it the name is registered as 'shared', create an instance of the class and resolve that
-                $this->aRegistered[$sName]['instance'] =
-                    $this->resolve($this->aRegistered[$sName]['class'], $aParams);
+            // resolve a new instance and return it
+            $oInstance = $this->resolve($oRegistration->getClass(), $aParams);
 
-                // return the instance
-                return $this->aRegistered[$sName]['instance'];
-            } else {
-                // if the class is registered as 'new', resolve a new instance and return it
-                return $this->resolve($this->aRegistered[$sName]['class'], $aParams);
+            // it the name is registered as 'shared', save the instance
+            if ($oRegistration->getType() == self::SHARED_INSTANCE) {
+                $oRegistration->setInstance($oInstance);
             }
+
+            return $oInstance;
         } else {
-            // if the class was not registered:
+            // if the class was not registered
+
             // resolve constructor
-            $oResult = $this->resolveConstructor($sName, $aOverrides);
+            $oInstance = $this->resolveConstructor($sName, $aOverrides);
 
             // resolve setters
-            $this->resolveSetters($oResult, $aOverrides);
+            $this->resolveSetters($oInstance, $aOverrides);
 
             // return the instance
-            return $oResult;
+            return $oInstance;
         }
     }
 
@@ -211,12 +229,10 @@ class DIContainer implements DIContainerInterface
         if ($oConstructor && count($oConstructor->getParameters())) {
             $aCtorParams = array();
 
-            foreach ($oConstructor->getParameters() as $oParam) {
-                $aCtorParams[] = $this->resolveParam($oParam, $aOverrides);
-            }
-
             // create a new instance with the given params
-            return $oReflector->newInstanceArgs($aCtorParams);
+            return $oReflector->newInstanceArgs(
+                $this->resolveMethod($oConstructor, $aOverrides)
+            );
         }
 
         // if there are no constructor params, create a new instance of the class
@@ -234,29 +250,56 @@ class DIContainer implements DIContainerInterface
         // loop through methods
         foreach ($oReflector->getMethods(ReflectionMethod::IS_PUBLIC) as $oMethod) {
             if (strpos($oMethod->getDocComment(), '@dependency')) {
-                $aSetterParams = array();
-
-                foreach ($oMethod->getParameters() as $oParam) {
-                    $aSetterParams[] = $this->resolveParam($oParam, $aOverrides);
-                }
-                $oMethod->invokeArgs($oObject, $aSetterParams);
+                $oMethod->invokeArgs(
+                    $oObject,
+                    $this->resolveMethod($oMethod, $aOverrides)
+                );
             }
         }
     }
 
     /**
+     * @param ReflectionMethod $oMethod
+     * @param array            $aOverrides
+     * @param array            $aCommentOverrides
+     *
+     * @return array
+     */
+    private function resolveMethod(ReflectionMethod $oMethod, array &$aOverrides)
+    {
+        $aMatches = array();
+        preg_match('/@dependency\((.*)\)/', $oMethod->getDocComment(), $aMatches);
+
+        $aCommentOverrides = array();
+        if ($aMatches) {
+            $aCommentOverrides = json_decode($aMatches[1], true);
+        }
+
+        $aSetterParams = array();
+        foreach ($oMethod->getParameters() as $oParam) {
+            $aSetterParams[] = $this->resolveParam($oParam, $aOverrides, $aCommentOverrides);
+        }
+
+        return $aSetterParams;
+    }
+
+    /**
      * @param ReflectionParameter $oParam
      * @param array               $aOverrides
+     * @param array               $aCommentOverrides
      *
      * @return mixed
      * @throws DIException
      */
-    private function resolveParam(ReflectionParameter $oParam, array &$aOverrides)
+    private function resolveParam(ReflectionParameter $oParam, array &$aOverrides, array &$aCommentOverrides)
     {
         if (!$oParam->isOptional() && $oParam->getClass()) {
             // if param is overriden
-            if (isset($aOverrides[$oParam->name])) {
-                $mOverridenParam = $aOverrides[$oParam->name];
+            if (isset($aOverrides[$oParam->name]) || isset($aCommentOverrides[$oParam->name])) {
+                $mOverridenParam =
+                    (isset($aCommentOverrides[$oParam->name]))
+                        ? $aCommentOverrides[$oParam->name]
+                        : $aOverrides[$oParam->name];
 
                 // if param is an object of the same class return the object
                 if (is_object($mOverridenParam) && is_subclass_of($mOverridenParam, $oParam->getClass()->name)) {
