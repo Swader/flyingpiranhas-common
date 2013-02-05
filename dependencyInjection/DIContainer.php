@@ -157,24 +157,6 @@ class DIContainer implements DIContainerInterface
 
             $aParams = array_merge($oRegistration->getOverrides(), $aOverrides);
 
-            // if the name and class are the same
-            if ($sName == $oRegistration->getClass()) {
-                // resolve constructor
-                $oInstance = $this->resolveConstructor($sName, $aParams);
-
-                // resolve setters
-                $this->resolveSetters($oInstance, $aParams);
-
-                // if registered as a shared instance
-                if ($oRegistration->getType() == self::SHARED_INSTANCE) {
-                    $oRegistration->setInstance($oInstance);
-                }
-
-                // return the instance
-                return $oInstance;
-            }
-
-
             // if an instance with the given name is registered, return that
             if ($oRegistration->getInstance()) {
                 return $oRegistration->getInstance();
@@ -189,6 +171,23 @@ class DIContainer implements DIContainerInterface
                     $oRegistration->setInstance($oInstance);
                 }
 
+                return $oInstance;
+            }
+
+            // if the name and class are the same
+            if ($sName == $oRegistration->getClass()) {
+                // resolve constructor
+                $oInstance = $this->resolveConstructor($sName, $aParams);
+
+                // resolve setters
+                $this->resolveSetters($oInstance, $aParams);
+
+                // if registered as a shared instance
+                if ($oRegistration->getType() == self::SHARED_INSTANCE) {
+                    $oRegistration->setInstance($oInstance);
+                }
+
+                // return the instance
                 return $oInstance;
             }
 
@@ -249,11 +248,10 @@ class DIContainer implements DIContainerInterface
 
         // loop through methods
         foreach ($oReflector->getMethods(ReflectionMethod::IS_PUBLIC) as $oMethod) {
-            if (strpos($oMethod->getDocComment(), '@dependency')) {
-                $oMethod->invokeArgs(
-                    $oObject,
-                    $this->resolveMethod($oMethod, $aOverrides)
-                );
+            $sDocComment = $oMethod->getDocComment();
+            if (strpos($sDocComment, '@dependency')) {
+                $aParams = $this->resolveMethod($oMethod, $aOverrides);
+                $oMethod->invokeArgs($oObject, $aParams);
             }
         }
     }
@@ -325,7 +323,7 @@ class DIContainer implements DIContainerInterface
             return $oParam->getDefaultValue();
         }
 
-        throw new DIException('Could not resolve parameter: ' . $oParam->name);
+        throw new DIException("Could not resolve: {$oParam->getDeclaringClass()->name}::{$oParam->getDeclaringFunction()->name}, {$oParam->name}");
     }
 
 }
