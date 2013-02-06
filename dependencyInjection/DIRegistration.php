@@ -3,6 +3,7 @@
 namespace flyingpiranhas\common\dependencyInjection;
 
 use Closure;
+use flyingpiranhas\common\dependencyInjection\exceptions\DIException;
 
 /**
  * @category       dependencyInjection
@@ -99,6 +100,10 @@ class DIRegistration
      */
     public function setInstance($oInstance)
     {
+        if (!is_object($oInstance)) {
+            throw new DIException('Invalid instance registration');
+        }
+
         $this->oInstance = $oInstance;
         $this->setClass(get_class($oInstance));
         return $this;

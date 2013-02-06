@@ -58,9 +58,10 @@ class Request implements RequestInterface
                 $mValue = array();
                 parse_str($mCookie, $mValue);
 
-                $dExpDate = (isset($mValue['expires'])) ? (new DateTime)->setTimestamp($mValue['expires']) : null;
-
-                $aCookies[] = new Cookie($sName, $mValue['params'], $dExpDate);
+                if (isset($mValue['expires']) && isset($mValue['params'])) {
+                    $dExpDate = (new DateTime)->setTimestamp($mValue['expires']);
+                    $aCookies[] = new Cookie($sName, new Params($mValue['params']), $dExpDate);
+                }
             }
         }
         $this->oCookies = new CookieJar($aCookies);
