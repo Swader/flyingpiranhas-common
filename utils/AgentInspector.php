@@ -9,7 +9,7 @@ namespace flyingpiranhas\common\utils;
  *
  * @category       utils
  * @package        flyingpiranhas.common
- * @license        BSD License
+ * @license        Apache-2.0
  * @version        0.01
  * @since          2012-11-24
  * @author         Bruno Škvorc <bruno@skvorc.me>

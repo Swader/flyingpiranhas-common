@@ -10,9 +10,9 @@ use flyingpiranhas\common\parser\exceptions\ParserException;
  * array. It is used in rendering personalized content for emails,
  * CMS pages and PDF documents, among other things
  *
- * @category      INTECH
- * @package       Parser
- * @license       BSD License
+ * @category      Parser
+ * @package       flyingpiranhas.common
+ * @license       Apache-2.0
  * @version       0.01
  * @since         2012-06-27
  * @author        Bruno Škvorc <bruno@skvorc.me>

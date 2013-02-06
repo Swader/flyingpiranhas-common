@@ -11,7 +11,7 @@ use ErrorException;
  *
  * @category       errorHandling
  * @package        flyingpiranhas.common
- * @license        BSD License
+ * @license        Apache-2.0
  * @version        0.01
  * @since          2012-11-23
  * @author         Ivan Pintar

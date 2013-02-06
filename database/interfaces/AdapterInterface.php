@@ -7,7 +7,7 @@ namespace flyingpiranhas\common\database\interfaces;
  *
  * @category       common
  * @package        flyingpiranhas
- * @license        BSD License
+ * @license        Apache-2.0
  * @version        0.01
  * @since          2012-11-23
  * @author         Bruno Škvorc <bruno@skvorc.me>
