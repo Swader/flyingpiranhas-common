@@ -123,4 +123,16 @@ class Validator
         return checkdnsrr($sDomain, $sRecord);
     }
 
+    /**
+     * A shorthand method to check if an array's key is set and is not empty
+     *
+     * @param string $sKey
+     * @param array $aArray
+     *
+     * @return bool
+     */
+    public static function full($sKey, $aArray) {
+        return (isset($aArray[$sKey]) && !empty($aArray[$sKey]));
+    }
+
 }

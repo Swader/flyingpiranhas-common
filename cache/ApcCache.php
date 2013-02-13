@@ -31,6 +31,15 @@ class ApcCache implements CacheInterface
     }
 
     /**
+     * Returns a boolean value on whether or not APC is available
+     *
+     * @return bool
+     */
+    public function isAvailable() {
+        return (extension_loaded('apc') && ini_get('apc.enabled'));
+    }
+
+    /**
      * @param string $sKey
      *
      * @return mixed
