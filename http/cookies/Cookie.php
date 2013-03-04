@@ -3,7 +3,6 @@
 namespace flyingpiranhas\common\http\cookies;
 
 use DateTime;
-use flyingpiranhas\common\http\Params;
 
 /**
  * The Cookie object is a simple iterable object that can also be used as an array.
@@ -19,28 +18,31 @@ use flyingpiranhas\common\http\Params;
 class Cookie
 {
 
+    const VALUES_KEY = 'fpCookieValues';
+    const EXPIRY_KEY = 'fpCookieExpiry';
+
     /** @var string */
     protected $sName;
 
     /** @var DateTime */
     protected $dExpires;
 
-    /** @var Params|string */
-    protected $oValue;
+    /** @var array|string */
+    protected $aValue;
 
     /**
      * @param string       $sName
-     * @param Params|array $aParams
+     * @param array|string $mParams
      * @param DateTime     $dExpires
      */
-    public function __construct($sName, $aParams, DateTime $dExpires = null)
+    public function __construct($sName, $mParams, DateTime $dExpires = null)
     {
         if ($dExpires) {
             $this->dExpires = $dExpires;
         }
 
-        $this->sName  = $sName;
-        $this->oValue = $this->buildValue($sName, $aParams);
+        $this->sName = $sName;
+        $this->aValue = $mParams;
     }
 
     /**
@@ -60,11 +62,11 @@ class Cookie
     }
 
     /**
-     * @return Params|string
+     * @return array|string
      */
     public function getValue()
     {
-        return $this->oValue;
+        return $this->aValue;
     }
 
     /**
@@ -79,25 +81,13 @@ class Cookie
     }
 
     /**
-     * @param Params|array|string $mValue
+     * @param array|string $mValue
      *
      * @return Cookie
      */
     public function setValue($mValue)
     {
-        $this->oValue = $this->buildValue('', $mValue);
+        $this->aValue = $mValue;
         return $this;
     }
-
-    /**
-     * @param string              $sName
-     * @param Params|array|string $mValue
-     *
-     * @return Params|string
-     */
-    protected function buildValue($sName, $mValue)
-    {
-        return (is_array($mValue)) ? new Params($mValue, $sName) : $mValue;
-    }
-
 }

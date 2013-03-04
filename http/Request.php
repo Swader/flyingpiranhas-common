@@ -4,7 +4,6 @@ namespace flyingpiranhas\common\http;
 
 use flyingpiranhas\common\http\cookies\Cookie;
 use DateTime;
-use flyingpiranhas\common\http\cookies\CookieJar;
 use flyingpiranhas\common\http\interfaces\RequestInterface;
 
 /**
@@ -30,70 +29,72 @@ class Request implements RequestInterface
     const PARAM_TYPES_POST = 'POST';
     const PARAM_TYPES_FILES = 'FILES';
 
-    /** @var Params */
-    private $oParams;
+    /** @var array */
+    private $aParams = array();
 
-    /** @var Params */
-    private $oServer;
+    /** @var array */
+    private $aServer = array();
 
-    /** @var CookieJar */
-    private $oCookies;
+    /** @var array */
+    private $aCookies;
 
     /**
      * Sets the required values
      */
     public function __construct()
     {
-        // build Params objects from $_GET, $_POST and $_FILES
-        $this->oParams = new Params(array('GET' => $_GET, 'POST' => $_POST, 'FILES' => $_FILES), 'params');
+        // build params arrays from $_GET, $_POST and $_FILES
+        $this->aParams = array('GET' => $_GET, 'POST' => $_POST, 'FILES' => $_FILES);
 
-        // build Params object from $_SERVER
-        $this->oServer = new Params($_SERVER, 'server');
+        // build server array from $_SERVER
+        $this->aServer = $_SERVER;
 
         // build Cookies and save them into the CookieRoot object
         $aCookies = array();
-        foreach ($_COOKIE as $sName => $mCookie) {
-            // the session cookie is a special case as it is not controlled by the framework
-            if ($sName != session_name()) {
-                $mValue = array();
-                parse_str($mCookie, $mValue);
-
-                if (isset($mValue['expires']) && isset($mValue['params'])) {
-                    $dExpDate = (new DateTime)->setTimestamp($mValue['expires']);
-                    $aCookies[] = new Cookie($sName, new Params($mValue['params']), $dExpDate);
-                }
+        foreach ($_COOKIE as $sName => $mCookieVal) {
+            $mValue = json_decode($mCookieVal, true);
+            if ($mValue === null) {
+                $mValue = $mCookieVal;
             }
+
+            if (!(isset($mValue[Cookie::EXPIRY_KEY]) && isset($mValue[Cookie::VALUES_KEY]))) {
+                $aCookies[$sName] = new Cookie($sName, $mValue);
+                continue;
+            }
+
+            $dExpDate = (new DateTime)->setTimestamp($mValue[Cookie::EXPIRY_KEY]);
+            $aCookies[$sName] = new Cookie($sName, $mValue[Cookie::VALUES_KEY], $dExpDate);
         }
-        $this->oCookies = new CookieJar($aCookies);
+        $this->aCookies = $aCookies;
     }
 
     /**
-     * @return Params
+     * @return array
      */
     public function getServer()
     {
-        return $this->oServer;
+        return $this->aServer;
     }
 
     /**
-     * @param string $sType
+     * @param string $sRequestMethod
      *
-     * @return Params|null|string
+     * @return array|null|string
      */
-    public function getParams($sType = null)
+    public function getParams($sRequestMethod = null)
     {
-        if ($sType) {
-            return $this->oParams->$sType;
+        if ($sRequestMethod) {
+            return $this->aParams[$sRequestMethod];
         }
-        return $this->oParams;
+        return $this->aParams;
     }
 
     /**
-     * @return CookieJar
+     * @return array
      */
     public function getCookies()
     {
-        return $this->oCookies;
+        return $this->aCookies;
     }
 
 }

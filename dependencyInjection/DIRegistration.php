@@ -97,6 +97,8 @@ class DIRegistration
      * @param object|null $oInstance
      *
      * @return DIRegistration
+     *
+     * @throws DIException
      */
     public function setInstance($oInstance)
     {

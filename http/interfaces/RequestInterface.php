@@ -2,8 +2,6 @@
 
 namespace flyingpiranhas\common\http\interfaces;
 
-use flyingpiranhas\common\http\Params;
-
 /**
  * A Request object which is expected to be used by other FP components,
  * should implement this interface
@@ -19,13 +17,18 @@ interface RequestInterface
 {
 
     /**
-     * @return Params
+     * @return array
      */
     public function getServer();
 
     /**
-     * @return Params
+     * @return array
      */
     public function getParams();
+
+    /**
+     * @return array
+     */
+    public function getCookies();
 
 }

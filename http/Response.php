@@ -1,6 +1,7 @@
 <?php
 
 namespace flyingpiranhas\common\http;
+
 use flyingpiranhas\common\http\cookies\Cookie;
 use flyingpiranhas\common\http\interfaces\ContentInterface;
 use flyingpiranhas\common\http\interfaces\RequestInterface;
@@ -37,6 +38,7 @@ class Response implements ResponseInterface
      * Initialize the response object and set the version value
      *
      * @param string $sVersion the HTTP version string, default: HTTP/1.1
+     *
      * @throws InvalidArgumentException
      */
     public function __construct($sVersion = self::VERSION_11)
@@ -141,7 +143,7 @@ class Response implements ResponseInterface
      * Sends a redirect and location header and dies
      *
      * @param string $sUrl
-     * @param int $iRedirectHeader
+     * @param int    $iRedirectHeader
      */
     public function redirect($sUrl, $iRedirectHeader = 302)
     {
@@ -175,11 +177,11 @@ class Response implements ResponseInterface
     {
         $oServer = $oRequest->getServer();
 
-        $url = (!empty($oServer->HTTPS)) ? "https://" . $oServer->SERVER_NAME . $oServer->REQUEST_URI : "http://" . $oServer->SERVER_NAME . $oServer->REQUEST_URI;
-        if ($oServer->HTTP_REFERER == $url) {
+        $url = (!empty($oServer['HTTPS'])) ? "https://" . $oServer['SERVER_NAME'] . $oServer['REQUEST_URI'] : "http://" . $oServer['SERVER_NAME'] . $oServer['REQUEST_URI'];
+        if ($oServer['HTTP_REFERER'] == $url) {
             $this->redirect('/');
         }
-        $this->redirect($oServer->HTTP_REFERER);
+        $this->redirect($oServer['HTTP_REFERER']);
     }
 
     /**
@@ -187,26 +189,27 @@ class Response implements ResponseInterface
      *
      * @return Response
      */
-    public function setCookie(Cookie $oCookie)
+    public function addCookie(Cookie $oCookie)
     {
         $aCookieValues = array(
-            'params' => ($oCookie->getValue() instanceof Params) ? $oCookie->getValue()->toArray() : $oCookie->getValue(),
-            'expires' => ($oCookie->getExpires() instanceof \DateTime) ? $oCookie->getExpires()->getTimestamp() : 0
+            Cookie::VALUES_KEY => $oCookie->getValue(),
+            Cookie::EXPIRY_KEY => ($oCookie->getExpires() instanceof \DateTime) ? $oCookie->getExpires()->getTimestamp() : 0
         );
 
-        setcookie($oCookie->getName(), http_build_query($aCookieValues), $aCookieValues['expires']);
+        setcookie($oCookie->getName(), json_encode($aCookieValues), $aCookieValues[Cookie::EXPIRY_KEY]);
         return $this;
     }
 
     /**
      * @param Cookie $oCookie
+     *
      * @return Response
      */
     public function deleteCookie(Cookie $oCookie)
     {
         $oCookie->setValue('')
-                ->setExpires((new \DateTime)->sub(new \DateInterval('P1D')));
-        $this->setCookie($oCookie);
+            ->setExpires((new \DateTime)->sub(new \DateInterval('P1D')));
+        $this->addCookie($oCookie);
         return $this;
     }
 

@@ -3,6 +3,7 @@
 namespace flyingpiranhas\common\http\interfaces;
 
 use flyingpiranhas\common\http\interfaces\ContentInterface;
+use flyingpiranhas\common\http\cookies\Cookie;
 
 /**
  * A Response object that is expected to be used by other FP components
@@ -49,6 +50,13 @@ interface ResponseInterface
     public function addHeader($sHeader);
 
     public function clearHeaders();
+
+    /**
+     * @param Cookie $oCookie
+     *
+     * @return ResponseInterface
+     */
+    public function addCookie(Cookie $oCookie);
 
     public function send();
 

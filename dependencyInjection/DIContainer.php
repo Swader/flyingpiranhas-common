@@ -2,7 +2,6 @@
 
 namespace flyingpiranhas\common\dependencyInjection;
 
-use flyingpiranhas\common\cache\interfaces\CacheInterface;
 use flyingpiranhas\common\dependencyInjection\exceptions\DIException;
 use ReflectionParameter;
 use ReflectionClass;
@@ -226,8 +225,6 @@ class DIContainer implements DIContainerInterface
         $oConstructor = $oReflector->getConstructor();
 
         if ($oConstructor && count($oConstructor->getParameters())) {
-            $aCtorParams = array();
-
             // create a new instance with the given params
             return $oReflector->newInstanceArgs(
                 $this->resolveMethod($oConstructor, $aOverrides)
@@ -259,7 +256,6 @@ class DIContainer implements DIContainerInterface
     /**
      * @param ReflectionMethod $oMethod
      * @param array            $aOverrides
-     * @param array            $aCommentOverrides
      *
      * @return array
      */
